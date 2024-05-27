@@ -15,14 +15,14 @@ def get_params(argv='1'):
 
         # INPUT PATH
         # dataset_dir='DCASE2020_SELD_dataset/',  # Base folder containing the foa/mic and metadata folders
-        dataset_dir='/scratch/asignal/partha/DCASE2023/DCASE2023_SELD_dataset',
+        dataset_dir='/root/dcase23/dataset_2023',
 
         # OUTPUT PATHS
         # feat_label_dir='DCASE2020_SELD_dataset/feat_label_hnet/',  # Directory to dump extracted features and labels
-        feat_label_dir='/scratch/asignal/partha/DCASE2023/DCASE2023_SELD_dataset/seld_feat_label',
+        feat_label_dir='/root/dcase23/dataset_2023/seld_feat_label',
  
-        model_dir='models/',            # Dumps the trained models and training curves in this folder
-        dcase_output_dir='results/',    # recording-wise results are dumped in this path.
+        model_dir='/root/dcase23/models/',            # Dumps the trained models and training curves in this folder
+        dcase_output_dir='/root/dcase23/results/',    # recording-wise results are dumped in this path.
 
         # DATASET LOADING PARAMETERS
         mode='dev',         # 'dev' - development or 'eval' - evaluation dataset
@@ -46,7 +46,7 @@ def get_params(argv='1'):
 
         # DNN MODEL PARAMETERS
         label_sequence_length=50,    # Feature sequence length
-        batch_size=128,              # Batch size
+        batch_size=1024,              # Batch size
         dropout_rate=0.05,           # Dropout rate, constant for all layers
         nb_cnn2d_filt=64,           # Number of CNN nodes, constant for each layer
         f_pool_size=[4, 4, 2],      # CNN frequency pooling, length of list = number of CNN layers, list value = pooling per layer

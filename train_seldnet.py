@@ -282,7 +282,7 @@ def main(argv):
         model = seldnet_model.SeldModel(data_in, data_out, params).to(device)
         if params['finetune_mode']:
             print('Running in finetuning mode. Initializing the model to the weights - {}'.format(params['pretrained_model_weights']))
-            model.load_state_dict(torch.load(params['pretrained_model_weights'], map_location='cpu'))
+            model.load_state_dict(torch.load(params['pretrained_model_weights'], map_location='cuda'))
 
         print('---------------- SELD-net -------------------')
         print('FEATURES:\n\tdata_in: {}\n\tdata_out: {}\n'.format(data_in, data_out))
@@ -356,7 +356,7 @@ def main(argv):
         # Evaluate on unseen test data
         # ---------------------------------------------------------------------
         print('Load best model weights')
-        model.load_state_dict(torch.load(model_name, map_location='cpu'))
+        model.load_state_dict(torch.load(model_name, map_location='cuda'))
 
         print('Loading unseen test dataset:')
         data_gen_test = cls_data_generator.DataGenerator(

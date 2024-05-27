@@ -20,22 +20,24 @@ def main(argv):
 
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
+    print("device :", device)
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 
     # use parameter set defined by user
     task_id = '1' if len(argv) < 2 else argv[1]
+    task_id = '3'
     params = parameters.get_params(task_id)
 
     print('\nLoading the best model and predicting results on the testing split')
     print('\tLoading testing dataset:')
     data_gen_test = cls_data_generator.DataGenerator(
-        params=params, split=1, shuffle=False, is_eval=True if params['mode']=='eval' else False
+        params=params, split=4, shuffle=False, is_eval=True if params['mode']=='eval' else False
     )
-    data_in, data_out = data_gen_test.get_data_sizes()
+    data_in, data_out = data_gen_test.get_data_sizes()          # (1024, 7, 250, 64), (1024, 50, 117)
     dump_figures = True
 
     # CHOOSE THE MODEL WHOSE OUTPUT YOU WANT TO VISUALIZE 
-    checkpoint_name = "models/1_1_foa_dev_split6_model.h5"
+    checkpoint_name = "/root/dcase23/models/3_1_dev_split0_multiaccdoa_foa_model.h5"
     model = seldnet_model.SeldModel(data_in, data_out, params)
     model.eval()
     model.load_state_dict(torch.load(checkpoint_name, map_location=torch.device('cpu')))
@@ -48,11 +50,12 @@ def main(argv):
         file_cnt = 0
         for data, target in data_gen_test.generate():
             data, target = torch.tensor(data).to(device).float(), torch.tensor(target).to(device).float()
-            output = model(data)
+            output = model(data)    # output : (1024, 50, 117)
+                                    # target : (1024, 50, 6, 4, 13)
 
             # (batch, sequence, max_nb_doas*3) to (batch, sequence, 3, max_nb_doas)
-            max_nb_doas = output.shape[2]//3
-            output = output.view(output.shape[0], output.shape[1], 3, max_nb_doas).transpose(-1, -2)
+            max_nb_doas = output.shape[2]//3                                                            # 39
+            output = output.view(output.shape[0], output.shape[1], 3, max_nb_doas).transpose(-1, -2)    # (1024, 50, 39, 3)
             target = target.view(target.shape[0], target.shape[1], 3, max_nb_doas).transpose(-1, -2)
 
             # get pair-wise distance matrix between predicted and reference.
@@ -61,9 +64,9 @@ def main(argv):
             output = output.cpu().detach().numpy()
             target = target.cpu().detach().numpy()
 
-            use_activity_detector = False
-            if use_activity_detector:
-                activity = (torch.sigmoid(activity_out).cpu().detach().numpy() >0.5)
+            # use_activity_detector = False
+            # if use_activity_detector:
+            #     activity = (torch.sigmoid(activity_out).cpu().detach().numpy() >0.5)
             mel_spec = data[0][0].cpu()
             foa_iv = data[0][-1].cpu()
             target[target > 1] =0
@@ -83,9 +86,9 @@ def main(argv):
             plot.subplot(324), plot.plot(target[:params['label_sequence_length'], 1, 2], 'b', lw=2)
             plot.grid()
             plot.ylim([-1.1, 1.1])
-            if use_activity_detector:
-                output[:, 0, 0:3] = activity[:, 0][:, np.newaxis]*output[:, 0, 0:3]
-                output[:, 1, 0:3] = activity[:, 1][:, np.newaxis]*output[:, 1, 0:3]
+            # if use_activity_detector:
+            #     output[:, 0, 0:3] = activity[:, 0][:, np.newaxis]*output[:, 0, 0:3]
+            #     output[:, 1, 0:3] = activity[:, 1][:, np.newaxis]*output[:, 1, 0:3]
 
             plot.subplot(325), plot.plot(output[:params['label_sequence_length'], 0, 0], 'r', lw=2)
             plot.subplot(325), plot.plot(output[:params['label_sequence_length'], 0, 1], 'g', lw=2)
