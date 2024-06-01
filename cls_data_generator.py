@@ -23,7 +23,8 @@ class DataGenerator(object):
         self._shuffle = shuffle
         self._feat_cls = cls_feature_class.FeatureClass(params=params, is_eval=self._is_eval)
         self._label_dir = self._feat_cls.get_label_dir()
-        self._feat_dir = self._feat_cls.get_normalized_feat_dir()
+        # self._feat_dir = self._feat_cls.get_normalized_feat_dir()
+        self._feat_dir = self._feat_cls.get_unnormalized_feat_dir()
         self._multi_accdoa = params['multi_accdoa']
 
         self._filenames_list = list()
@@ -94,21 +95,21 @@ class DataGenerator(object):
             exit()
 
         if not self._is_eval:
-            temp_label = np.load(os.path.join(self._label_dir, self._filenames_list[0]))
+            temp_label = np.load(os.path.join(self._label_dir, self._filenames_list[0]))        # (1620, 6, 4, 13) @@@@@@@@@@
             if self._multi_accdoa is True:
-                self._num_track_dummy = temp_label.shape[-3]
-                self._num_axis = temp_label.shape[-2]
-                self._num_class = temp_label.shape[-1]
+                self._num_track_dummy = temp_label.shape[-3]    # 6
+                self._num_axis = temp_label.shape[-2]           # 4
+                self._num_class = temp_label.shape[-1]          # 13
             else:
                 self._label_len = temp_label.shape[-1]
             self._doa_len = 3 # Cartesian
 
-        if self._per_file:
+        if self._per_file:  # false
             self._batch_size = int(np.ceil(max_frames/float(self._feature_seq_len)))
             print('\tWARNING: Resetting batch size to {}. To accommodate the inference of longest file of {} frames in a single batch'.format(self._batch_size, max_frames))
             self._nb_total_batches = len(self._filenames_list)
         else:
-            self._nb_total_batches = int(np.floor(total_frames / (self._batch_size*self._feature_seq_len)))
+            self._nb_total_batches = int(np.floor(total_frames / (self._batch_size*self._feature_seq_len)))     # 2
 
         self._feature_batch_seq_len = self._batch_size*self._feature_seq_len
         self._label_batch_seq_len = self._batch_size*self._label_seq_len
@@ -119,7 +120,7 @@ class DataGenerator(object):
         Generates batches of samples
         :return: 
         """
-        if self._shuffle:
+        if self._shuffle:       # false
             random.shuffle(self._filenames_list)
 
         # Ideally this should have been outside the while loop. But while generating the test data we want the data
@@ -166,15 +167,15 @@ class DataGenerator(object):
                 # load feat and label to circular buffer. Always maintain atleast one batch worth feat and label in the
                 # circular buffer. If not keep refilling it.
                 while len(self._circ_buf_feat) < self._feature_batch_seq_len:
-                    temp_feat = np.load(os.path.join(self._feat_dir, self._filenames_list[file_cnt]))
-                    temp_label = np.load(os.path.join(self._label_dir, self._filenames_list[file_cnt]))
+                    temp_feat = np.load(os.path.join(self._feat_dir, self._filenames_list[file_cnt]))           # (8100, 448)       foa_dev_norm
+                    temp_label = np.load(os.path.join(self._label_dir, self._filenames_list[file_cnt]))         # (1620, 6, 4, 13)  foa_dev_adpit_label
                     if not self._per_file: 
                         # Inorder to support variable length features, and labels of different resolution. 
                         # We remove all frames in features and labels matrix that are outside 
                         # the multiple of self._label_seq_len and self._feature_seq_len. Further we do this only in training.
-                        temp_label = temp_label[:temp_label.shape[0] - (temp_label.shape[0] % self._label_seq_len)]
-                        temp_mul = temp_label.shape[0]//self._label_seq_len
-                        temp_feat = temp_feat[:temp_mul*self._feature_seq_len, :]
+                        temp_label = temp_label[:temp_label.shape[0] - (temp_label.shape[0] % self._label_seq_len)]     # (1600, 6, 4, 13)
+                        temp_mul = temp_label.shape[0]//self._label_seq_len             # 32
+                        temp_feat = temp_feat[:temp_mul*self._feature_seq_len, :]       # (8000, 448)
 
                     for f_row in temp_feat:
                         self._circ_buf_feat.append(f_row)

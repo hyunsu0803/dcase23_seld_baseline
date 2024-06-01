@@ -40,7 +40,7 @@ def main(argv):
     checkpoint_name = "/root/dcase23/models/3_1_dev_split0_multiaccdoa_foa_model.h5"
     model = seldnet_model.SeldModel(data_in, data_out, params)
     model.eval()
-    model.load_state_dict(torch.load(checkpoint_name, map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(checkpoint_name, map_location=torch.device('cuda')))
     model = model.to(device)
     if dump_figures:
         dump_folder = os.path.join('dump_dir', os.path.basename(checkpoint_name).split('.')[0])
